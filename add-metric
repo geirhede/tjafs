@@ -1,0 +1,51 @@
+#!/opt/homebrew/bin/bash
+
+dates=("2023-09-25" "2023-10-02" "2023-10-05" "2023-10-11" "2023-10-16" "2023-10-19" "2023-11-03" "2023-11-13" "2023-11-21" "2023-11-27" "2023-12-05" "2023-12-12" "2023-12-18" "2024-01-10" "2024-01-22" "2024-01-31" "2024-03-21" "2024-04-09" "2024-04-18" "2024-04-23" "2024-04-30" "2024-05-23" "2024-05-29" "2024-06-04")
+teamname=web-platform
+values=(93 30 0 0 0 0 5 50 70 5 38 125 0 28 15 45 58 63 65 10 5 15 15 15)
+
+for i in ${!dates[@]}; do
+  timestamp=$(gdate -d ${dates[$i]} +%s)
+  value=${values[$i]}
+  #echo $timestamp $value
+
+
+  pointsarray+=( $(
+cat <<POINT
+,{
+  "timestamp": $timestamp,
+  "value": $value
+}
+POINT
+) )
+
+
+
+done
+
+  #echo "${pointsarray[@]}"
+
+  points="${pointsarray[@]}"
+  points=${points:1}
+
+  #echo "foo${points}bar"
+
+  curl -vvv "https://api.datadoghq.eu/api/v2/series" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -H "DD-API-KEY: ${DD_API_KEY}" \
+  -H "DD-APPLICATION-KEY: ${DD_APP_KEY}" \
+  -d @- <<PAYLOAD
+  {
+    "series": [
+      {
+        "metric": "platform.metric_name",
+        "type": 3,
+        "points": [ $points ],
+        "tags": [ "team_name:${teamname}" ]
+      }
+    ]
+  }
+PAYLOAD
+
+
